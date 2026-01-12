@@ -1,0 +1,8 @@
+-- Grant schema permissions to app_user
+\c insta_automation
+GRANT ALL ON SCHEMA public TO app_user;
+ALTER SCHEMA public OWNER TO app_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO app_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO app_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO app_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO app_user;

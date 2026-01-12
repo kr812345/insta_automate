@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  name          String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  socialAccounts SocialAccount[]
+  scheduledPosts ScheduledPost[]
+
+  @@map("users")
+}
+
+model SocialAccount {
+  id               String    @id @default(uuid())
+  userId           String    @map("user_id")
+  platform         String    // 'instagram', 'youtube', etc.
+  platformUserId   String    @map("platform_user_id")
+  platformUsername String?   @map("platform_username")
+  accessToken      String    @map("access_token") @db.Text
+  refreshToken     String?   @map("refresh_token") @db.Text
+  tokenExpiresAt   DateTime? @map("token_expires_at")
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduledPosts ScheduledPost[]
+
+  @@unique([userId, platform, platformUserId])
+  @@index([userId, platform])
+  @@map("social_accounts")
+}
+
+enum PostType {
+  IMAGE
+  CAROUSEL
+  REEL
+}
+
+enum PostStatus {
+  PENDING
+  PUBLISHED
+  FAILED
+  CANCELLED
+}
+
+model ScheduledPost {
+  id               String      @id @default(uuid())
+  userId           String      @map("user_id")
+  socialAccountId  String      @map("social_account_id")
+  platform         String      // 'instagram', 'youtube', etc.
+  postType         PostType    @map("post_type")
+  caption          String?     @db.Text
+  scheduledAt      DateTime    @map("scheduled_at")
+  status           PostStatus  @default(PENDING)
+  platformPostId   String?     @map("platform_post_id")
+  retryCount       Int         @default(0) @map("retry_count")
+  errorMessage     String?     @map("error_message") @db.Text
+  publishedAt      DateTime?   @map("published_at")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  mediaAssets   MediaAsset[]
+  jobLogs       JobLog[]
+
+  @@index([scheduledAt, status])
+  @@index([userId, status])
+  @@index([socialAccountId])
+  @@map("scheduled_posts")
+}
+
+model MediaAsset {
+  id              String        @id @default(uuid())
+  scheduledPostId String        @map("scheduled_post_id")
+  fileUrl         String        @map("file_url") @db.Text
+  fileType        String?       @map("file_type")
+  fileSize        Int?          @map("file_size")
+  width           Int?
+  height          Int?
+  position        Int           @default(0) // For carousels (order)
+  storageKey      String?       @map("storage_key")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  scheduledPost ScheduledPost @relation(fields: [scheduledPostId], references: [id], onDelete: Cascade)
+
+  @@index([scheduledPostId])
+  @@map("media_assets")
+}
+
+model JobLog {
+  id              String        @id @default(uuid())
+  scheduledPostId String        @map("scheduled_post_id")
+  status          String
+  message         String?       @db.Text
+  errorDetails    Json?         @map("error_details")
+  executionTimeMs Int?          @map("execution_time_ms")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  scheduledPost ScheduledPost @relation(fields: [scheduledPostId], references: [id], onDelete: Cascade)
+
+  @@index([scheduledPostId, createdAt])
+  @@map("job_logs")
+}
+
