@@ -1,6 +1,6 @@
 # 📱 Instagram Post & Reel Automation Platform
 
-A production-ready, scalable Instagram scheduling platform built with NestJS and Next.js.
+A production-ready, scalable Instagram scheduling platform built with ExpressJS and Next.js.
 
 ## 🚀 Quick Start
 
